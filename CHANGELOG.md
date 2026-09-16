@@ -1,3 +1,10 @@
+**Unreleased**
+
+*Updates:*
+* optional LibTorch tensor backend (CMake option `PARTONS_WITH_TORCH`, off by default): DVCS coefficient functions factored into scalar-type templates (`DVCSCFFKernels.h`, used by `DVCSCFFStandard` with no change of results) and new `DVCSCFFTorch` module evaluating them as batched, differentiable tensor operations on a fixed tanh-sinh grid; check program `test/torch/dvcs_cff_torch_check`
+
+------
+
 **4.0**
 
 *Updates:*

@@ -1,4 +1,5 @@
 #include "../../../../../include/partons/modules/convol_coeff_function/DVCS/DVCSCFFStandard.h"
+#include "../../../../../include/partons/modules/convol_coeff_function/DVCS/DVCSCFFKernels.h"
 
 #include <ElementaryUtils/logger/CustomException.h>
 #include <ElementaryUtils/string_utils/Formatter.h>
@@ -341,164 +342,33 @@ double DVCSCFFStandard::computeSquareChargeAveragedGPD(
 }
 
 void DVCSCFFStandard::computeSubtractionFunctionsV() {
-    double LogZeta = log(m_Zeta);
-    double LogInvZeta = log((1. - m_Zeta) / m_Zeta);
-    double LogInvZeta2 = LogInvZeta * LogInvZeta;
-    double DiLogInvZeta = NumA::MathUtils::DiLog(1. - 1. / m_Zeta);
-    double Pi2 = Constant::PI * Constant::PI;
 
-    double RealPartSubtractQuarkLO; // Real part of eq. (B2)
-    double ImaginaryPartSubtractQuarkLO; // Imaginary part of eq. (B2)
+    // Appendix B, shared with the LibTorch backend (DVCSCFFKernels.h).
+    const DVCSCFFKernels::SubtractionConstants s =
+            DVCSCFFKernels::subtractionConstants(m_Zeta, m_xi, m_logQ2OverMu2,
+                    m_alphaSOver2Pi, NumA::MathUtils::DiLog(1. - 1. / m_Zeta),
+                    m_qcdOrderType == PerturbativeQCDOrderType::NLO,
+                    /*polarized=*/false);
 
-    // LO, 1 / 1 - z
-
-    RealPartSubtractQuarkLO = -LogInvZeta;
-
-    ImaginaryPartSubtractQuarkLO = Constant::PI;
-
-    // Computation of subtraction terms in eq. (8) and (9)
-    // Sums up previous contributions and takes care of LO / NLO and P(olarized) / U(npolarized) subtleties
-
-    // LO, real and imaginary parts
-
-    m_realPartSubtractQuark = RealPartSubtractQuarkLO;
-    m_imaginaryPartSubtractQuark = ImaginaryPartSubtractQuarkLO;
-
-    m_realPartSubtractGluon = 0.;
-    m_imaginaryPartSubtractGluon = 0.;
-
-    // NLO, real and imaginary parts
-
-    if (m_qcdOrderType == PerturbativeQCDOrderType::NLO) {
-        double RealPartSubtractQuarkNLOV; // Real part of eq. (B4)
-        double ImaginaryPartSubtractQuarkNLOV; // Imaginary part of eq. (B4)
-        double RealPartSubtractGluonNLOV; // Real part of eq. (B6)
-        double ImaginaryPartSubtractGluonNLOV; // Imaginary part of eq. (B6)
-
-        // NLO, quark, vector, eq. (B4)
-
-        RealPartSubtractQuarkNLOV = Pi2 / 2. - 3. * DiLogInvZeta
-                + LogInvZeta * (Pi2 + 9. + 3. * LogZeta - LogInvZeta2 / 3.);
-        RealPartSubtractQuarkNLOV += m_logQ2OverMu2
-                * (Pi2 - 3. * LogInvZeta - LogInvZeta2);
-        RealPartSubtractQuarkNLOV *= m_CF / 2.;
-
-        ImaginaryPartSubtractQuarkNLOV = Pi2 / 3. + 9. + 3. * LogZeta
-                - LogInvZeta2 - m_logQ2OverMu2 * (2. * LogInvZeta + 3);
-        ImaginaryPartSubtractQuarkNLOV *= -Constant::PI * m_CF / 2.;
-
-        // NLO, gluon, vector, eq. (B6)
-
-        RealPartSubtractGluonNLOV = -1. + Pi2 / 3. * (1. - 3. / 4. * m_Zeta)
-                + DiLogInvZeta - LogZeta * LogInvZeta;
-        RealPartSubtractGluonNLOV += (2. - m_Zeta) * LogInvZeta
-                * (1. - LogInvZeta / 4.);
-        RealPartSubtractGluonNLOV += m_logQ2OverMu2 / 2.
-                * (1. - (2. - m_Zeta) * LogInvZeta);
-        RealPartSubtractGluonNLOV *= 1 / (2. * m_xi);
-
-        ImaginaryPartSubtractGluonNLOV = (2. - m_Zeta)
-                * (2. - m_logQ2OverMu2 - LogInvZeta) - 2. * LogZeta;
-        ImaginaryPartSubtractGluonNLOV *= -Constant::PI / (4. * m_xi);
-
-        // Real part, quark contribution
-
-        m_realPartSubtractQuark += m_alphaSOver2Pi * RealPartSubtractQuarkNLOV;
-
-        // Real part, gluon contribution
-
-        m_realPartSubtractGluon += m_alphaSOver2Pi * RealPartSubtractGluonNLOV;
-
-        // Imaginary part, quark contribution
-
-        m_imaginaryPartSubtractQuark += m_alphaSOver2Pi
-                * ImaginaryPartSubtractQuarkNLOV;
-
-        // Imaginary part, gluon contribution
-
-        m_imaginaryPartSubtractGluon += m_alphaSOver2Pi
-                * ImaginaryPartSubtractGluonNLOV;
-
-    }
+    m_realPartSubtractQuark = s.realQuark;
+    m_imaginaryPartSubtractQuark = s.imaginaryQuark;
+    m_realPartSubtractGluon = s.realGluon;
+    m_imaginaryPartSubtractGluon = s.imaginaryGluon;
 }
 
 void DVCSCFFStandard::computeSubtractionFunctionsA() {
-    double LogZeta = log(m_Zeta);
-    double LogInvZeta = log((1. - m_Zeta) / m_Zeta);
-    double LogInvZeta2 = LogInvZeta * LogInvZeta;
-    double DiLogInvZeta = NumA::MathUtils::DiLog(1. - 1. / m_Zeta);
-    double Pi2 = Constant::PI * Constant::PI;
 
-    double RealPartSubtractQuarkLO; // Real part of eq. (B2)
-    double ImaginaryPartSubtractQuarkLO; // Imaginary part of eq. (B2)
+    // Appendix B, shared with the LibTorch backend (DVCSCFFKernels.h).
+    const DVCSCFFKernels::SubtractionConstants s =
+            DVCSCFFKernels::subtractionConstants(m_Zeta, m_xi, m_logQ2OverMu2,
+                    m_alphaSOver2Pi, NumA::MathUtils::DiLog(1. - 1. / m_Zeta),
+                    m_qcdOrderType == PerturbativeQCDOrderType::NLO,
+                    /*polarized=*/true);
 
-    // LO, 1 / 1 - z
-
-    RealPartSubtractQuarkLO = -LogInvZeta;
-
-    ImaginaryPartSubtractQuarkLO = Constant::PI;
-
-    // Computation of subtraction terms in eq. (8) and (9)
-    // Sums up previous contributions and takes care of LO / NLO and P(olarized) / U(npolarized) subtleties
-
-    // LO, real and imaginary parts
-
-    m_realPartSubtractQuark = RealPartSubtractQuarkLO;
-    m_imaginaryPartSubtractQuark = ImaginaryPartSubtractQuarkLO;
-
-    m_realPartSubtractGluon = 0.;
-    m_imaginaryPartSubtractGluon = 0.;
-
-    // NLO, real and imaginary parts
-
-    if (m_qcdOrderType == PerturbativeQCDOrderType::NLO) {
-        double RealPartSubtractQuarkNLOA; // Real part of eq. (B4)
-        double ImaginaryPartSubtractQuarkNLOA; // Imaginary part of eq. (B4)
-        double RealPartSubtractGluonNLOA; // Real part of eq. (B6)
-        double ImaginaryPartSubtractGluonNLOA; // Imaginary part of eq. (B6)
-
-        // NLO, quark, axial, eq. (B3)
-
-        RealPartSubtractQuarkNLOA = Pi2 / 6. - DiLogInvZeta
-                + LogInvZeta * (Pi2 + 9. + LogZeta - LogInvZeta2 / 3.);
-        RealPartSubtractQuarkNLOA += m_logQ2OverMu2
-                * (Pi2 - 3. * LogInvZeta - LogInvZeta2);
-        RealPartSubtractQuarkNLOA *= m_CF / 2.;
-
-        ImaginaryPartSubtractQuarkNLOA = Pi2 / 3. + 9. + LogZeta - LogInvZeta2
-                - m_logQ2OverMu2 * (2. * LogInvZeta + 3);
-        ImaginaryPartSubtractQuarkNLOA *= -Constant::PI * m_CF / 2.;
-
-        // NLO, gluon, axial, eq. (B5)
-
-        RealPartSubtractGluonNLOA = 1. + Pi2 / 4. * m_Zeta
-                + m_Zeta * LogInvZeta * (1. - LogInvZeta / 4.);
-        RealPartSubtractGluonNLOA += -m_logQ2OverMu2 / 2.
-                * (1. + m_Zeta * LogInvZeta);
-        RealPartSubtractGluonNLOA *= 1 / (2. * m_xi);
-
-        ImaginaryPartSubtractGluonNLOA = 2. - LogInvZeta - m_logQ2OverMu2;
-        ImaginaryPartSubtractGluonNLOA *= -Constant::PI * m_Zeta / (4. * m_xi);
-
-        // Real part, quark contribution
-
-        m_realPartSubtractQuark += m_alphaSOver2Pi * RealPartSubtractQuarkNLOA;
-
-        // Real part, gluon contribution
-
-        m_realPartSubtractGluon += m_alphaSOver2Pi * RealPartSubtractGluonNLOA;
-
-        // Imaginary part, quark contribution
-
-        m_imaginaryPartSubtractQuark += m_alphaSOver2Pi
-                * ImaginaryPartSubtractQuarkNLOA;
-
-        // Imaginary part, gluon contribution
-
-        m_imaginaryPartSubtractGluon += m_alphaSOver2Pi
-                * ImaginaryPartSubtractGluonNLOA;
-
-    }
+    m_realPartSubtractQuark = s.realQuark;
+    m_imaginaryPartSubtractQuark = s.imaginaryQuark;
+    m_realPartSubtractGluon = s.realGluon;
+    m_imaginaryPartSubtractGluon = s.imaginaryGluon;
 }
 
 std::complex<double> DVCSCFFStandard::computeIntegralsV() {
@@ -708,19 +578,9 @@ std::complex<double> DVCSCFFStandard::computeIntegralsA() {
 }
 
 std::complex<double> DVCSCFFStandard::KernelQuarkNLOV(double x) {
-    double z = x / m_xi;
-
-    std::complex<double> LogOneMinusz(0., 0.);
-    if (x < m_xi) {
-// remplacer z par x/xi
-        LogOneMinusz = std::complex<double>(0., 0.);
-        LogOneMinusz = std::complex<double>(log((1. - z) / 2.), 0.);
-    }
-    if (x > m_xi) {
-        LogOneMinusz = std::complex<double>(log((z - 1.) / 2.), -Constant::PI);
-    }
-
-    return KernelQuarkNLOA(x) - (m_CF / (1. + z)) * LogOneMinusz;
+    // Appendix A eq. (A2), shared with the LibTorch backend (DVCSCFFKernels.h).
+    return DVCSCFFKernels::toStdComplex(
+            DVCSCFFKernels::quarkNLOV(x, m_xi, m_logQ2OverMu2));
 }
 
 /*!
@@ -733,12 +593,8 @@ std::complex<double> DVCSCFFStandard::KernelQuarkV(double x) {
     //std::complex<double> z = std::complex<double>(x / m_xi, 0.);
     //std::complex<double> quark();
 
-    double z = x / m_xi;
-
-//    TComplex z = TComplex(x / fXi, 0.);
-//    TComplex Quark;
-
-    std::complex<double> quark(1. / (1. - z), 0.);
+    // Appendix A eq. (A1), shared with the LibTorch backend (DVCSCFFKernels.h).
+    std::complex<double> quark(DVCSCFFKernels::quarkLO(x, m_xi), 0.);
 
     if (m_qcdOrderType == PerturbativeQCDOrderType::NLO) {
         quark += m_alphaSOver2Pi * KernelQuarkNLOV(x);
@@ -751,12 +607,8 @@ std::complex<double> DVCSCFFStandard::KernelQuarkA(double x) {
     //std::complex<double> z = std::complex<double>(x / m_xi, 0.);
     //std::complex<double> quark();
 
-    double z = x / m_xi;
-
-//    TComplex z = TComplex(x / fXi, 0.);
-//    TComplex Quark;
-
-    std::complex<double> quark(1. / (1. - z), 0.);
+    // Appendix A eq. (A1), shared with the LibTorch backend (DVCSCFFKernels.h).
+    std::complex<double> quark(DVCSCFFKernels::quarkLO(x, m_xi), 0.);
 
     if (m_qcdOrderType == PerturbativeQCDOrderType::NLO) {
         quark += m_alphaSOver2Pi * KernelQuarkNLOA(x);
@@ -967,73 +819,23 @@ double DVCSCFFStandard::ConvolImKernelGluonV(double x,
 }
 
 std::complex<double> DVCSCFFStandard::KernelGluonNLOV(double x) {
-    debug(__func__, "entered");
-
-    double z = x / m_xi;
-
-    std::complex<double> LogOneMinusz(0., 0.);
-    if (x < m_xi) {
-        // remplacer z par x/xi
-        LogOneMinusz = std::complex<double>(log((1. - z) / 2.), 0.);
-    }
-    if (x > m_xi) {
-        LogOneMinusz = std::complex<double>(log((z - 1.) / 2.), -Constant::PI);
-    }
-
-    std::complex<double> GluonNLOV(LogOneMinusz);
-    GluonNLOV += (m_logQ2OverMu2 - 2.);
-    GluonNLOV /= 1. - z;
-    GluonNLOV += LogOneMinusz / (1. + z);
-    GluonNLOV *= (m_nf / 2.);
-    GluonNLOV += -KernelGluonNLOA(x);
-
-    return GluonNLOV;
+    // Appendix A eq. (A2), shared with the LibTorch backend (DVCSCFFKernels.h).
+    return DVCSCFFKernels::toStdComplex(
+            DVCSCFFKernels::gluonNLOV(x, m_xi, m_logQ2OverMu2,
+                    static_cast<double>(m_nf)));
 }
 
 std::complex<double> DVCSCFFStandard::KernelGluonNLOA(double x) {
-    debug(__func__, "entered");
-//
-//    debug( __func__,
-//               ElemUtils::Formatter() << "x= " << x );
-
-    double z = x / m_xi;
-    std::complex<double> LogOneMinusz(0., 0.);
-    if (x < m_xi) {
-        // remplacer z par x/xi
-        LogOneMinusz = std::complex<double>(log((1. - z) / 2.), 0.);
-    }
-    if (x > m_xi) {
-        LogOneMinusz = std::complex<double>(log((z - 1.) / 2.), -Constant::PI);
-    }
-
-    std::complex<double> GluonNLOA(LogOneMinusz);
-    GluonNLOA += (m_logQ2OverMu2 - 2.);
-    GluonNLOA *= (1. / (1. - (z * z)) + LogOneMinusz / ((1. + z) * (1. + z)));
-    GluonNLOA += -LogOneMinusz * LogOneMinusz / (2. * (1. + z) * (1. + z));
-    GluonNLOA *= (m_nf / 2.);
-
-    return GluonNLOA;
+    // Appendix A eq. (A2), shared with the LibTorch backend (DVCSCFFKernels.h).
+    return DVCSCFFKernels::toStdComplex(
+            DVCSCFFKernels::gluonNLOA(x, m_xi, m_logQ2OverMu2,
+                    static_cast<double>(m_nf)));
 }
 
 std::complex<double> DVCSCFFStandard::KernelQuarkNLOA(double x) {
-
-    double z = x / m_xi;
-    std::complex<double> LogOneMinusz(0., 0.);
-    if (x < m_xi) {
-        // remplacer z par x/xi
-        LogOneMinusz = std::complex<double>(log((1. - z) / 2.), 0.);
-    }
-    if (x > m_xi) {
-        LogOneMinusz = std::complex<double>(log((z - 1.) / 2.), -Constant::PI);
-    }
-
-    std::complex<double> QuarkNLOA(m_logQ2OverMu2);
-    QuarkNLOA += LogOneMinusz / 2. - (3. / 4.);
-    QuarkNLOA *= 2. * LogOneMinusz + 3.;
-    QuarkNLOA += -(27. / 4.) - (1. - z) / (1. + z) * LogOneMinusz;
-    QuarkNLOA *= m_CF / (2. * (1. - z));
-
-    return QuarkNLOA;
+    // Appendix A eq. (A2), shared with the LibTorch backend (DVCSCFFKernels.h).
+    return DVCSCFFKernels::toStdComplex(
+            DVCSCFFKernels::quarkNLOA(x, m_xi, m_logQ2OverMu2));
 }
 
 double DVCSCFFStandard::ConvolReKernelQuark1A(double x,

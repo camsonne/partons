@@ -7,12 +7,20 @@ cmake_minimum_required(VERSION 3.5)
 project(PARTONS CXX)
 
 # define c++ standard and issue all the warning demanded by this standard
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-   add_definitions(-std=c++17 -pedantic -Wno-vla-extension)
+# (C++17 by default; the optional LibTorch backend, see below, needs C++20 --
+# LibTorch >= 2.6 headers do not compile with an earlier standard)
+option(PARTONS_WITH_TORCH "Build the LibTorch tensor backend (DVCSCFFTorch)" OFF)
+if(PARTONS_WITH_TORCH)
+   set(PARTONS_CXX_STANDARD 20)
 else()
-   add_definitions(-std=c++17 -pedantic -Wno-vla-extension -fext-numeric-literals)
+   set(PARTONS_CXX_STANDARD 17)
 endif()
-set(CMAKE_CXX_STANDARD 17)
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   add_definitions(-std=c++${PARTONS_CXX_STANDARD} -pedantic -Wno-vla-extension)
+else()
+   add_definitions(-std=c++${PARTONS_CXX_STANDARD} -pedantic -Wno-vla-extension -fext-numeric-literals)
+endif()
+set(CMAKE_CXX_STANDARD ${PARTONS_CXX_STANDARD})
 
 if (NOT DEFINED CMAKE_MACOSX_RPATH)
    set(CMAKE_MACOSX_RPATH 0)
@@ -77,6 +85,29 @@ find_package(LHAPDF REQUIRED)
 # find libxml2
 find_package(LibXml2 REQUIRED)
 
+# LIBTORCH BACKEND (optional) ==============================================================
+#
+# Off by default: the library then has no dependency on LibTorch and is built
+# exactly as before. With -DPARTONS_WITH_TORCH=ON the DVCSCFFTorch module (DVCS
+# CFFs as batched, differentiable tensor operations on a fixed quadrature grid,
+# sharing DVCSCFFStandard's coefficient functions through DVCSCFFKernels.h) and
+# its check program test/torch/dvcs_cff_torch_check are compiled in.
+#
+#   cmake -DPARTONS_WITH_TORCH=ON -DCMAKE_PREFIX_PATH=/path/to/libtorch ...
+#
+# (the option itself is declared with the C++ standard at the top of this file)
+set(PARTONS_TORCH_LIBRARIES "")
+if(PARTONS_WITH_TORCH)
+    find_package(Torch REQUIRED)
+    add_definitions(-DPARTONS_WITH_TORCH)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+    include_directories(${TORCH_INCLUDE_DIRS})
+    set(PARTONS_TORCH_LIBRARIES ${TORCH_LIBRARIES})
+    message("-- LibTorch backend: ON (DVCSCFFTorch)")
+else()
+    message("-- LibTorch backend: OFF (use -DPARTONS_WITH_TORCH=ON to enable)")
+endif()
+
 # directories containing headers 
 include_directories(${ElementaryUtils_INCLUDE_DIR} ${NumA++_INCLUDE_DIR} ${SFML_INCLUDE_DIR} ${CLN_INCLUDE_DIR} ${GSL_INCLUDE_DIRS} ${Apfel++_INCLUDE_DIR} ${LHAPDF_INCLUDE_DIR} ${LIBXML2_INCLUDE_DIRS})
 
@@ -124,7 +155,30 @@ target_link_libraries(
 	${LHAPDF_LIBRARIES}
 
 	${LIBXML2_LIBRARIES}
+
+	${PARTONS_TORCH_LIBRARIES}
 )
+
+# LibTorch backend check program: DVCSCFFTorch against DVCSCFFStandard on a
+# standard GPD model, the batched API against the module path, and autograd.
+if(PARTONS_WITH_TORCH)
+    add_executable(dvcs_cff_torch_check test/torch/dvcs_cff_torch_check.cpp)
+    target_link_libraries(dvcs_cff_torch_check
+        PARTONS
+        ${ElementaryUtils_LIBRARIES}
+        ${NumA++_LIBRARIES}
+        ${PARTONS_TORCH_LIBRARIES})
+    # Partons::init() needs partons.properties (and what it points to) next to
+    # the executable.
+    add_custom_command(TARGET dvcs_cff_torch_check POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/test/torch/config
+        $<TARGET_FILE_DIR:dvcs_cff_torch_check>)
+    enable_testing()
+    add_test(NAME dvcs_cff_torch_check
+        COMMAND dvcs_cff_torch_check
+        WORKING_DIRECTORY $<TARGET_FILE_DIR:dvcs_cff_torch_check>)
+endif()
 
 # install
 install(TARGETS PARTONS 
