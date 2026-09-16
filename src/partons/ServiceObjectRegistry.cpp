@@ -12,6 +12,7 @@
 #include "../../include/partons/services/DVMPConvolCoeffFunctionService.h"
 #include "../../include/partons/services/DVMPObservableService.h"
 #include "../../include/partons/services/GPDService.h"
+#include "../../include/partons/services/IoffeTimeDistributionService.h"
 #include "../../include/partons/services/hash_sum/CryptographicHashService.h"
 #include "../../include/partons/services/TCSConvolCoeffFunctionService.h"
 #include "../../include/partons/services/TCSObservableService.h"
@@ -56,6 +57,11 @@ GPDService* ServiceObjectRegistry::getGPDService() const {
 CollinearDistributionService* ServiceObjectRegistry::getCollinearDistributionService() const {
     return static_cast<CollinearDistributionService*>(get(
             CollinearDistributionService::classId));
+}
+
+IoffeTimeDistributionService* ServiceObjectRegistry::getIoffeTimeDistributionService() const {
+    return static_cast<IoffeTimeDistributionService*>(get(
+            IoffeTimeDistributionService::classId));
 }
 
 DVCSConvolCoeffFunctionService* ServiceObjectRegistry::getDVCSConvolCoeffFunctionService() const {

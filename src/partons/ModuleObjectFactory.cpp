@@ -15,6 +15,7 @@
 #include "../../include/partons/modules/evolution/gpd/GPDEvolutionModule.h"
 #include "../../include/partons/modules/gpd/GPDModule.h"
 #include "../../include/partons/modules/gpd_subtraction_constant/GPDSubtractionConstantModule.h"
+#include "../../include/partons/modules/ioffe_time/IoffeTimeDistributionModule.h"
 #include "../../include/partons/modules/observable/DDVCS/DDVCSObservable.h"
 #include "../../include/partons/modules/observable/DVCS/DVCSObservable.h"
 #include "../../include/partons/modules/observable/DVMP/DVMPObservable.h"
@@ -208,6 +209,16 @@ GPDSubtractionConstantModule* ModuleObjectFactory::newGPDSubtractionConstantModu
 GPDSubtractionConstantModule* ModuleObjectFactory::newGPDSubtractionConstantModule(
         const std::string& className) {
     return static_cast<GPDSubtractionConstantModule*>(newModuleObject(className));
+}
+
+IoffeTimeDistributionModule* ModuleObjectFactory::newIoffeTimeDistributionModule(
+        unsigned int classId) {
+    return static_cast<IoffeTimeDistributionModule*>(newModuleObject(classId));
+}
+
+IoffeTimeDistributionModule* ModuleObjectFactory::newIoffeTimeDistributionModule(
+        const std::string& className) {
+    return static_cast<IoffeTimeDistributionModule*>(newModuleObject(className));
 }
 
 DVCSConvolCoeffFunctionModule* ModuleObjectFactory::newDVCSConvolCoeffFunctionModule(

@@ -18,6 +18,7 @@
 #include "convol_coeff_function/DVMP/DVMPConvolCoeffFunctionKinematic.h"
 #include "convol_coeff_function/TCS/TCSConvolCoeffFunctionKinematic.h"
 #include "gpd/GPDKinematic.h"
+#include "ioffe_time/IoffeTimeKinematic.h"
 #include "List.h"
 #include "observable/DDVCS/DDVCSObservableKinematic.h"
 #include "observable/DVCS/DVCSObservableKinematic.h"
@@ -63,6 +64,18 @@ public:
      * @return List of extracted GPDKinematic objects.
      */
     List<CollinearDistributionKinematic> getCollinearDistributionKinematicFromFile(const std::string &filePath);
+
+    /**
+     * Read Ioffe-time kinematics from a file.
+     *
+     * One kinematic point per line, with columns separated by '|': nu | z2 | xi | t | MuF2 | MuR2.
+     * An optional first line starting with '#' gives the units of the columns, e.g. "#none|fm2|none|GeV2|GeV2|GeV2".
+     * Default units are none, GeVm2, none, GeV2, GeV2, GeV2.
+     * @param filePath Path to the file.
+     * @return List of kinematics.
+     */
+    List<IoffeTimeKinematic> getIoffeTimeKinematicFromFile(
+            const std::string &filePath);
 
     /**
      * Parse a text file in order to retrieve a list of DVCSConvolCoeffFunctionKinematic objects.

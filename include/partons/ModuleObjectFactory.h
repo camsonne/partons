@@ -41,6 +41,7 @@ class DVMPXiConverterModule;
 class GPDEvolutionModule;
 class GPDModule;
 class GPDSubtractionConstantModule;
+class IoffeTimeDistributionModule;
 class RunningAlphaStrongModule;
 class TCSConvolCoeffFunctionModule;
 class GAM2ConvolCoeffFunctionModule;
@@ -178,6 +179,21 @@ public:
      * @return GPDSubtractionConstantModule pointer.
      */
     GPDSubtractionConstantModule* newGPDSubtractionConstantModule(
+            const std::string &className);
+
+    /**
+     * Specialization of ModuleObjectFactory::newModuleObject into a IoffeTimeDistributionModule.
+     * @param classId Unique identifier of last child class.
+     * @return IoffeTimeDistributionModule pointer.
+     */
+    IoffeTimeDistributionModule* newIoffeTimeDistributionModule(
+            unsigned int classId);
+    /**
+     * Specialization of ModuleObjectFactory::newModuleObject into a IoffeTimeDistributionModule.
+     * @param className Name of last child class.
+     * @return IoffeTimeDistributionModule pointer.
+     */
+    IoffeTimeDistributionModule* newIoffeTimeDistributionModule(
             const std::string &className);
 
     /**

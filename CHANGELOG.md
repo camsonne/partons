@@ -1,3 +1,13 @@
+**unreleased**
+
+*Physics:*
+* addition of Ioffe-time distributions, the quantities lattice QCD gives access to (quasi- and pseudo-distributions), allowing GPD models to be confronted with lattice data, e.g. in global fits:
+   * new kinematics `IoffeTimeKinematic` (nu, z2, xi, t, MuF2, MuR2) and result `IoffeTimeDistributionResult` (real and imaginary parts for all partons, isovector combination)
+   * new abstract module `IoffeTimeDistributionModule` (Fourier transform of any GPD model with respect to x) with implementations `IoffeTimeDistributionLightCone` (light-cone ITD) and `IoffeTimeDistributionPseudoNLO` (reduced pseudo-ITD at finite separation with one-loop matching; unpolarized, helicity and transversity kernels)
+   * new service `IoffeTimeDistributionService` (XML tasks `computeSingleKinematic`, `computeManyKinematic`, `printResults`), kinematics from file via `KinematicUtils::getIoffeTimeKinematicFromFile`, optional property `ioffe_time.service.batch.size`
+
+------
+
 **4.0**
 
 *Updates:*

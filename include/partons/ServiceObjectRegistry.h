@@ -22,6 +22,7 @@ class DVCSObservableService;
 class DVMPConvolCoeffFunctionService;
 class DVMPObservableService;
 class GPDService;
+class IoffeTimeDistributionService;
 class ServiceObject;
 class TCSConvolCoeffFunctionService;
 class TCSObservableService;
@@ -43,6 +44,11 @@ public:
 
     GPDService* getGPDService() const;
     CollinearDistributionService* getCollinearDistributionService() const;
+
+    /**
+     * Get IoffeTimeDistributionService.
+     */
+    IoffeTimeDistributionService* getIoffeTimeDistributionService() const;
     DVCSConvolCoeffFunctionService* getDVCSConvolCoeffFunctionService() const;
     TCSConvolCoeffFunctionService* getTCSConvolCoeffFunctionService() const;
     DVMPConvolCoeffFunctionService* getDVMPConvolCoeffFunctionService() const;
