@@ -430,13 +430,17 @@ std::pair<torch::Tensor, torch::Tensor> DVCSCFFTorch::evaluate(
         const torch::Tensor xiCpu = xiFlat.to(torch::kCPU).contiguous();
         const torch::Tensor lqCpu = lq.reshape( { -1 }).to(torch::kCPU).contiguous();
         const torch::Tensor asCpu = as.reshape( { -1 }).to(torch::kCPU).contiguous();
+        // Plain accessors: this loop runs once per evaluate() call, and a
+        // training loop calls evaluate() at every step for thousands of points.
+        const auto xiA = xiCpu.accessor<double, 1>();
+        const auto lqA = lqCpu.accessor<double, 1>();
+        const auto asA = asCpu.accessor<double, 1>();
         for (int64_t p = 0; p < P; ++p) {
-            const double xiP = xiCpu[p].item<double>();
+            const double xiP = xiA[p];
             const double zeta = 2. * xiP / (1. + xiP);
             const DVCSCFFKernels::SubtractionConstants s =
-                    DVCSCFFKernels::subtractionConstants(zeta, xiP,
-                            lqCpu[p].item<double>(), asCpu[p].item<double>(),
-                            NumA::MathUtils::DiLog(1. - 1. / zeta), nlo,
+                    DVCSCFFKernels::subtractionConstants(zeta, xiP, lqA[p],
+                            asA[p], NumA::MathUtils::DiLog(1. - 1. / zeta), nlo,
                             polarized);
             subReQ[p] = s.realQuark;
             subImQ[p] = s.imaginaryQuark;
